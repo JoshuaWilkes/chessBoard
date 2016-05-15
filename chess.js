@@ -19,134 +19,85 @@ var piece = [[0,0,1],[1,0,2],[2,0,3],[3,0,4],[4,0,5],[5,0,3],[6,0,2],[7,0,1],
 //stores the possible moves			
 var moves = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]];
 
+//used by the utility function for searching possible moves
+var posArr = [[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
+//GLOBAL DEFAULTS
+
+	//set tile colours here
+	var WHITE_TILE_COLOR = "white";
+	var BLACK_TILE_COLOR = "grey";
+	var TILE_BORDER_COLOR = "black";
+	
 
 function posMovesPawn(pieceNo){
-	//clear the previous available moves
-	moves[pieceNo] = [];
 	//no validation of pieceNo yet
-	var direction = (pieceNo < 16) ? 1:-1;
+	//black : -1 
+	//white : 1
+	var player = (pieceNo < 16) ? 1:-1;
 	var posx = piece[pieceNo][0];
 	var posy = piece[pieceNo][1];
-		
-	if(direction+posy >=0 && direction+posy <8){
+	
+	//within bounds
+	if(player + posy >=0 && player+posy <8){
 		//Forward movements
-		if(board[posy + direction][posx] == -1){
+		if(board[posy + player][posx] == -1){
 			//valid move 1 space forward
-			moves[pieceNo].push([posy + direction,posx]);
-			if((direction == 1 && piece[pieceNo][1] == 1) || (direction == -1  && piece[pieceNo][1] == 6)) {
-				if(board[posy + 2*direction][posx] == -1){
+			moves[pieceNo].push([posy + player,posx]);
+			
+			//if its the first move
+			if((player == 1 && piece[pieceNo][1] == 1) || (player == -1  && piece[pieceNo][1] == 6)) {
+				if(board[posy + 2*player][posx] == -1){
 					//first move, 2 space forward valid
-					moves[pieceNo].push([posy + 2*direction,posx]);
+					moves[pieceNo].push([posy + 2*player,posx]);
 				}
 			}
 		}
 		
 		//Capture movements
-		//left
-		if(posx >0){
-			
-			//diagonal left
-			var p = board[posy + direction][posx-1];
-			if(p != -1){
-				//check if its an opponent piece
-				if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-					moves[pieceNo].push([posy + direction,posx-1]);
+		var x = posx-1;
+		for(var i = 0; i < 2; i++){
+			x+= 2*i;
+			if(x>-1 && x < 8){
+				var p = board[posy + player][x];
+				if(p != -1){
+					//check if its an opponent piece
+					if((player == 1 && p > 15) || (player == -1 && p < 16)){
+						moves[pieceNo].push([posy + player,x]);
+					}
 				}
 			}
-			
-		}
-		//right
-		if(posx <7){
-			//diagonal right
-			var p = board[posy + direction][posx+1];
-			if(p != -1){
-				//check if its an opponent piece
-				if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-					moves[pieceNo].push([posy + direction,posx+1]);
-				}	
-			}
-			
 		}
 	}		
 }
 function posMovesRuck(pieceNo){
-	//clear the previous available moves
 	//need to add teh castle move
-	moves[pieceNo] = [];
-	var direction = (pieceNo < 16) ? 1:-1;
+	//black : -1 
+	//white : 1
+	var player = (pieceNo < 16) ? 1:-1;
 	var posx = piece[pieceNo][0];
 	var posy = piece[pieceNo][1];
-	//forward
-	var x,y = 0;
-	while(true){
-		++y;
-		var p = board[posy + y][posx];
-		if(posy+y > 7){
+
+	posArr = [[1,posy,posx],[1,posy,posx],[1,posy,posx],[1,posy,posx]];
+	for(var i = 1; i < 8; i++){
+		//if all searched terminated, stop iteration;
+		if(posArr[0][0]+posArr[1][0]+posArr[2][0]+posArr[3][0] == 0){
 			break;
 		} else {
-			var p = board[posy + y][posx];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx]);
-				break;
-			}
+			//increment search
+			//forwards backwards left right
+			++posArr[0][1];
+			--posArr[1][1];
+			--posArr[2][2];
+			++posArr[3][2];
+			
+			searchLines(pieceNo);
 		}
 	}
-	//back
-	x,y = 0;
-	while(true){
-		--y;
-		if(posy+y < 0){
-			break;
-		} else {
-			var p = board[posy + y][posx];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx]);
-				break;
-			}
-		}
-	}
-	//left
-	x,y = 0;
-	while(true){
-		--x;
-		if(posx+x < 0){
-			break;
-		} else {
-			var p = board[posy][posx + x];
-			if(p == -1){
-				moves[pieceNo].push([posy,posx + x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy,posx + x]);
-				break;
-			}
-		}
-	}
-	//right
-	x,y = 0;
-	while(true){
-		++x;
-		if(posx+x > 7){
-			break;
-		} else {
-			var p = board[posy][posx + x];
-			if(p == -1){
-				moves[pieceNo].push([posy,posx + x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy,posx + x]);
-				break;
-			}
-		}
-	}
-	
 }
 function posMovesKnight(pieceNo){
-	//clear the previous available moves
-	moves[pieceNo] = [];
-	var direction = (pieceNo < 16) ? 1:-1;
+	//black : -1 
+	//white : 1
+	var player = (pieceNo < 16) ? 1:-1;
 	var posx = piece[pieceNo][0];
 	var posy = piece[pieceNo][1];
 	
@@ -157,7 +108,7 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
@@ -168,7 +119,7 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
@@ -179,7 +130,7 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
@@ -190,7 +141,7 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
@@ -201,7 +152,7 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
@@ -212,7 +163,7 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
@@ -223,7 +174,7 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
@@ -234,234 +185,94 @@ function posMovesKnight(pieceNo){
 		var p = board[posy + y][posx+x];
 		if(p == -1){
 			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
+		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
 			moves[pieceNo].push([posy + y,posx + x]);
 		}
 	}
 }
 function posMovesBishop(pieceNo){
-	//clear the previous available moves
-	//need to add teh castle move
-	moves[pieceNo] = [];
-	var direction = (pieceNo < 16) ? 1:-1;
+	//black : -1 
+	//white : 1
+	var player = (pieceNo < 16) ? 1:-1;
 	var posx = piece[pieceNo][0];
 	var posy = piece[pieceNo][1];
-	//forward left
-	var x,y = 0;
-	while(true){
-		++y;
-		--x;
-		if(posy+y > 7 || posx+x <0){
+	//forward-left forward-right back-left back-right
+	posArr = [[1,posy,posx],[1,posy,posx],[1,posy,posx],[1,posy,posx]];
+	for(var i = 1; i < 8; i++){
+		//if all searched terminated, stop iteration;
+		if(posArr[0][0]+posArr[1][0]+posArr[2][0]+posArr[3][0] == 0){
 			break;
 		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
-			}
+			//increment search
+			//forward-left forward-right back-left back-right
+			++posArr[0][1];
+			--posArr[0][2];
+			
+			++posArr[1][1];
+			++posArr[1][2];
+			
+			--posArr[2][1];
+			--posArr[2][2];
+			
+			--posArr[3][1];
+			++posArr[3][2];
+			searchLines(pieceNo);
+			
 		}
 	}
-	//forward right
-	x,y = 0;
-	while(true){
-		++y;
-		++x;
-		if(posy+y > 7 || posx+x >7){
-			break;
-		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
-			}
-		}
-	}
-	//back left
-	x,y = 0;
-	while(true){
-		--y;
-		--x;
-		if(posy+y < 0 || posx+x < 0){
-			break;
-		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
-			}
-		}
-	}
-	//back right
-	x,y = 0;
-	while(true){
-		--y;
-		++x;
-		if(posy+y < 0 || posx+x > 7){
-			break;
-		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
+}
+
+/*
+* This is a general function to test the validity of 4 tiles for a given piece
+* used the values assigned to global array posArr
+* @param pieceNo the piece to check moves for
+*/
+function searchLines(pieceNo){
+	var player = (pieceNo < 16) ? 1:-1;
+	for(var j = 0; j < 4;j++){
+	
+		//if still searching
+		if(posArr[j][0] == 1){
+			//within bounds
+			if(posArr[j][1] > -1 && posArr[j][1] < 8 && posArr[j][2] > -1 && posArr[j][2] < 8){
+				var p = board[posArr[j][1]][posArr[j][2]];
+				//tile is empty, add continue searching
+				if(p == -1){
+					moves[pieceNo].push([posArr[j][1],posArr[j][2]]);
+				//tile is players piece, stop searching
+				} else if((player == 1 && p < 16) || (player == -1 && p > 15)){
+					//set to stop searching
+					posArr[j][0] = 0;
+				//tile is opponents piece, add and stop searching
+				}else if((player == 1 && p > 15) || (player == -1 && p < 16)){
+					moves[pieceNo].push([posArr[j][1],posArr[j][2]]);
+					posArr[j][0] = 0;
+				}
+			} else {
+				//set to stop searching
+				posArr[j][0] = 0;
 			}
 		}
 	}
 }
+
 function posMovesQueen(pieceNo){
-		//clear the previous available moves
-	moves[pieceNo] = [];
-	var direction = (pieceNo < 16) ? 1:-1;
+	//black : -1 
+	//white : 1
+	var player = (pieceNo < 16) ? 1:-1;
 	var posx = piece[pieceNo][0];
 	var posy = piece[pieceNo][1];
-	//forward
-	var x,y = 0;
-	while(true){
-		++y;
-		var p = board[posy + y][posx];
-		if(posy+y > 7){
-			break;
-		} else {
-			var p = board[posy + y][posx];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx]);
-				break;
-			}
-		}
-	}
-	//back
-	x,y = 0;
-	while(true){
-		--y;
-		if(posy+y < 0){
-			break;
-		} else {
-			var p = board[posy + y][posx];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx]);
-				break;
-			}
-		}
-	}
-	//left
-	x,y = 0;
-	while(true){
-		--x;
-		if(posx+x < 0){
-			break;
-		} else {
-			var p = board[posy][posx + x];
-			if(p == -1){
-				moves[pieceNo].push([posy,posx + x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy,posx + x]);
-				break;
-			}
-		}
-	}
-	//right
-	x,y = 0;
-	while(true){
-		++x;
-		if(posx+x > 7){
-			break;
-		} else {
-			var p = board[posy][posx + x];
-			if(p == -1){
-				moves[pieceNo].push([posy,posx + x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy,posx + x]);
-				break;
-			}
-		}
-	}
-	//add diagonal movement
+	//up down left right
+	posMovesRuck(pieceNo);
+	//forward-left forward-right back-left back-right
+	posMovesBishop(pieceNo);
 	
-	//forward left
-	x,y = 0;
-	while(true){
-		++y;
-		--x;
-		if(posy+y > 7 || posx+x <0){
-			break;
-		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
-			}
-		}
-	}
-	//forward right
-	x,y = 0;
-	while(true){
-		++y;
-		++x;
-		if(posy+y > 7 || posx+x >7){
-			break;
-		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
-			}
-		}
-	}
-	//back left
-	x,y = 0;
-	while(true){
-		--y;
-		--x;
-		if(posy+y < 0 || posx+x < 0){
-			break;
-		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
-			}
-		}
-	}
-	//back right
-	x,y = 0;
-	while(true){
-		--y;
-		++x;
-		if(posy+y < 0 || posx+x > 7){
-			break;
-		} else {
-			var p = board[posy + y][posx+x];
-			if(p == -1){
-				moves[pieceNo].push([posy + y,posx+x]);
-			} else if((direction == 1 && p > 15) || (direction == -1 && p < 16)){
-				moves[pieceNo].push([posy + y,posx+x]);
-				break;
-			}
-		}
-	}
 }
 function posMovesKing(pieceNo){
-	//clear the previous available moves
 	//need to add castling
-	moves[pieceNo] = [];
-	var direction = (pieceNo < 16) ? 1:-1;
+	//black : -1 
+	//white : 1
+	var player = (pieceNo < 16) ? 1:-1;
 	var posx = piece[pieceNo][0];
 	var posy = piece[pieceNo][1];
 	
@@ -478,7 +289,7 @@ function posMovesKing(pieceNo){
 				//boundary check
 				if(posy+y != 8 && posy+y !=-1 && posx+x !=-1 && posx+x !=8){
 					var p = board[posy + y][posx+x];
-					if(p == -1 || (direction == 1 && p > 15) || (direction == -1 && p < 16)){
+					if(p == -1 || (player == 1 && p > 15) || (player == -1 && p < 16)){
 						moves[pieceNo].push([posy + y,posx + x]);
 					}
 				}
@@ -492,8 +303,7 @@ function posMovesKing(pieceNo){
 //it does not exectute possibe moves for all pieces
 //just a pawn and a king.
 function displayMoves(){
-	posMovesPawn(8);
-	posMovesKing(4);
+	posMoves();
 	var text = "";
 	for(var i = 0; i < 32; i++){
 		text += "|" + i;
@@ -510,6 +320,8 @@ function displayMoves(){
 */
 function posMoves(){
 	for(var i = 0; i<32;i++){
+		//clear the previous moves
+		moves[i] = [];
 		switch(piece[i][2]) {
 			case 0:
 				posMovesPawn(i);
@@ -540,8 +352,8 @@ function posMoves(){
 function paintBoard(){
 	//The element the board is getting placed into
 	var container = document.getElementsByClassName("maincontent");
-	var board = generateBoard();
-	container[0].appendChild(board);
+	var chessBoard = generateBoard();
+	container[0].appendChild(chessBoard);
 }
 
 /*
@@ -549,32 +361,67 @@ function paintBoard(){
 *@return the chessboard div element
 */
 function generateBoard(){
-		//set tile colours here
-	var whiteTileCol = "white";
-	var BlackTileCol = "grey";
-	var board = document.createElement("div");
+	
+	var chessBoard = document.createElement("div");
 	
 	//class used for css
-	board.className = "board";
+	chessBoard.className = "board";
 	//generates each tile, assigns unique ID
 	//Colours tiles in standard pattern
 	for(var y = 0; y < 8; y++){
 		for(x = 0; x < 8; x++){
 			var tile = document.createElement("div");
+			var text = document.createElement("p");
 			//class used for css
 			tile.className = "tile";
 			tile.id = x + ":" + y;
 			//alternates colours with row/column number
 			if(y%2 - x%2 == 0){
-				tile.style.backgroundColor = whiteTileCol;
+				tile.style.backgroundColor = WHITE_TILE_COLOR;
 			} else {
-				tile.style.backgroundColor = BlackTileCol;
+				tile.style.backgroundColor = BLACK_TILE_COLOR;
 			}
-			board.appendChild(tile);
+			
+			//initial testing, write piece name on the board
+			if(board[y][x] != -1){
+				var textCol = "green";
+				if(board[y][x] > 15){
+					textCol = "black";
+				}
+				text.style.color = textCol;
+				
+				//pawn 0, ruck 1, knight 2,bishop 3,  queen 4, king 5
+				
+				switch (piece[board[y][x]][2]) {
+					case -1:
+						break;
+					case 0:
+						text.innerHTML = "PAWN";
+						break;
+					case 1:
+						text.innerHTML = "RUCK";
+						break;
+					case 2:
+						text.innerHTML = "KNIGHT";
+						break;
+					case 3:
+						text.innerHTML = "BISHOP";
+						break;
+					case 4:
+						text.innerHTML = "QUEEN";
+						break;
+					case 5:
+						text.innerHTML = "KING";
+						break;
+					
+				}
+			}
+			tile.appendChild(text);
+			chessBoard.appendChild(tile);
 		}
 	}
 	
-	return board;
+	return chessBoard;
 	
 }
 
