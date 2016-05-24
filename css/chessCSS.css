@@ -1,0 +1,86 @@
+html{
+margin:0;
+padding:0;
+height:100%;
+width:100%;
+overflow:hidden;
+}
+body{
+	margin:0px;
+	padding:0px;
+	background: linear-gradient(#d9d9d9, #ffffff);
+	overflow:auto;
+	height:100%;
+}
+
+header {
+	height:200px;
+	width:100%;
+	min-width:700px;
+	
+}
+
+a{
+	color:white;	
+	font-size:20px;
+	font-family:verdana;
+}
+.header_top{
+	height:80%;
+	width:100%;
+	float:left;
+	background-color:green;
+}
+
+.header_top h1{
+	margin:0px;
+	float:left;
+}
+
+.login_bar{
+	height:20%;
+	width:100%;
+	float:left;
+	background-color:grey;
+}
+
+.login_bar ul{
+	float:right;	
+}
+
+.login_bar a:hover{
+	background:linear-gradient(grey,black);
+}
+
+.nav_bar{
+	height:20%;
+	width:100%;
+	background-color:blue;
+	float:left;
+}
+
+
+.nav_bar_tabs{
+	height:100%;
+	list-style-type:none;
+	margin:0px;
+	padding:0px;
+}
+
+.nav_bar_tabs li{
+	display:table;
+	height:100%;
+	float:left;
+	border-right:1px solid;
+}
+.nav_bar_tabs a{
+	display:table-cell;
+	vertical-align:middle;
+	padding-right:20px;
+	padding-left:20px;
+	text-decoration:none;
+}
+
+.nav_bar a:hover{
+	background:linear-gradient(#0000b3,#000080);
+}

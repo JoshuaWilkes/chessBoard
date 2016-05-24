@@ -1,0 +1,48 @@
+	var imgsrc = "/images/pieces/"
+	var imgfile = "";
+	var iArr = ["0.png","1.png","2.png","3.png","4.png","5.png","6.png","7.png","8.png","9.png","10.png","11.png"];
+  	for (var y = 0; y < 8; y++) {
+  		for (var x = 0; x < 8; x++) {
+        let text = '';
+				const piece = board[y][x];
+        switch (pieceType(piece)) {
+          case EMPTY:
+            break;
+          case PAWN:
+            text = 'PAWN';
+            break;
+          case RUCK:
+            text = 'RUCK';
+            break;
+          case KNIGHT:
+            text = 'KNIGHT';
+            break;
+          case BISHOP:
+            text = 'BISHOP';
+            break;
+          case QUEEN:
+            text = 'QUEEN';
+            break;
+          case KING:
+            text = 'KING';
+						break;
+        }
+  			// Alternates colours with row/column number
+        var bk = 'black';
+  			if (y%2 - x%2 === 0) {
+  				bk = 'white';
+  			}
+			
+			//var p = 
+			imgfile = imgsrc + iArr[piece];
+			//var pieceImg = <img src=imgfile alt="hi">;
+        // Add the tile to the board
+        tiles.push(<div className={'tile ' + bk} key={x + ':' + y}>{<img src=imgfile alt=""></img>}</div>);
+  		}
+  	}
+	
+	
+				//assign chess piece or empty
+			var imgfile = piece === -1 ? "":CHESS_PIECE_SRC + piece + CHESS_PIECE_FILETYPE;
+        // Add the tile to the board
+        tiles.push(<div className={'tile ' + bk} key={x + ':' + y}>{<img src={imgfile} alt=""></img>}</div>);

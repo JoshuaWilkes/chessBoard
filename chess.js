@@ -1,349 +1,363 @@
-var board = [[0,1,2,3,4,5,6,7],
-			[8,9,10,11,12,13,14,15],
-			[-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1],
-			[-1,-1,-1,-1,-1,-1,-1,-1],
-			[16,17,18,19,20,21,22,23],
-			[24,25,26,27,28,29,30,31]];
-			
-			
-//pawn 0, ruck 1, knight 2,bishop 3,  queen 4, king 5
 
-//32 pieces [x,y,type]  0,15 black 16,31 white
-var piece = [[0,0,1],[1,0,2],[2,0,3],[3,0,4],[4,0,5],[5,0,3],[6,0,2],[7,0,1],
-			[0,1,0],[1,1,0],[2,1,0],[3,1,0],[4,1,0],[5,1,0],[6,1,0],[7,1,0],
-			[0,6,0],[1,6,0],[2,6,0],[3,6,0],[4,6,0],[5,6,0],[6,6,0],[7,6,0],
-			[0,7,1],[1,7,2],[2,7,3],[3,7,4],[4,7,5],[5,7,3],[6,7,2],[7,7,1]];
+const EMPTY = -1;
+const [ PAWN, RUCK, KNIGHT, BISHOP, QUEEN, KING ] = [0, 1, 2, 3, 4, 5];
+const [ WHITE, BLACK ] = [0, 6];
+const WHITE_TILE_COLOR = "silver";
+const BLACK_TILE_COLOR = "maroon";
+const pieceType = (n) => (n == -1 ? -1 : n % 6);
+const pieceColour = (n) => (n - pieceType(n));
+const BOARD = [
+	[ BLACK + RUCK, BLACK + KNIGHT, BLACK + BISHOP, BLACK + QUEEN, BLACK + KING, BLACK + BISHOP, BLACK + KNIGHT, BLACK + RUCK ],
+	[ BLACK + PAWN, BLACK + PAWN, BLACK + PAWN, BLACK + PAWN, BLACK + PAWN, BLACK + PAWN, BLACK + PAWN, BLACK + PAWN ],
+	[ EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY ],
+	[ EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY ],
+	[ EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY ],
+	[ EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY ],
+	[ WHITE + PAWN, WHITE + PAWN, WHITE + PAWN, WHITE + PAWN, WHITE + PAWN, WHITE + PAWN, WHITE + PAWN, WHITE + PAWN ],
+	[ WHITE + RUCK, WHITE + KNIGHT, WHITE + BISHOP, WHITE + QUEEN, WHITE + KING, WHITE + BISHOP, WHITE + KNIGHT, WHITE + RUCK ]
+];
 
-//stores the possible moves			
-var moves = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]];
-
-//used by the utility function for searching possible moves
-var posArr = [[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
-//GLOBAL DEFAULTS
-
-	//set tile colours here
-	var WHITE_TILE_COLOR = "white";
-	var BLACK_TILE_COLOR = "grey";
-	var TILE_BORDER_COLOR = "black";
-	
-
-function posMovesPawn(pieceNo){
+/*
+* Possible moves for pawn
+* @param board the game board
+* @param posx the x coord
+* @param posy the y coord
+* @return an array of possible moves in the form [[y,x],[y,x]..] or [] if no moves possible
+*/
+function posMovesPawn(board, posx, posy){
 	//no validation of pieceNo yet
-	//black : -1 
-	//white : 1
-	var player = (pieceNo < 16) ? 1:-1;
-	var posx = piece[pieceNo][0];
-	var posy = piece[pieceNo][1];
-	
+	//black : 1
+	//white : -1
+	var player = (board[posy][posx] < BLACK) ? -1:1;
+	var moves = [];
+
 	//within bounds
-	if(player + posy >=0 && player+posy <8){
+	if(boundaries(posy+player,posx)){
 		//Forward movements
 		if(board[posy + player][posx] == -1){
 			//valid move 1 space forward
-			moves[pieceNo].push([posy + player,posx]);
-			
+			moves.push([posy + player,posx]);
 			//if its the first move
-			if((player == 1 && piece[pieceNo][1] == 1) || (player == -1  && piece[pieceNo][1] == 6)) {
+			if((player == 1 && posy == 1) || (player == -1  && posy == 6)) {
 				if(board[posy + 2*player][posx] == -1){
 					//first move, 2 space forward valid
-					moves[pieceNo].push([posy + 2*player,posx]);
+					moves.push([posy + 2*player,posx]);
 				}
 			}
 		}
-		
-		//Capture movements
-		var x = posx-1;
-		for(var i = 0; i < 2; i++){
-			x+= 2*i;
-			if(x>-1 && x < 8){
-				var p = board[posy + player][x];
-				if(p != -1){
-					//check if its an opponent piece
-					if((player == 1 && p > 15) || (player == -1 && p < 16)){
-						moves[pieceNo].push([posy + player,x]);
-					}
-				}
+	}
+
+	//Capture movements
+	var x = [-1,1];
+	for(var i = 0; i < 2; i++){
+		//boundary check
+		if(boundaries(posy+player,posx+x[i])){
+			var p = board[posy + player][posx + x[i]];
+			//check if its an opponent piece
+			if(p != -1 && capture(board[posy][posx],p)){
+				moves.push([posy + player,posx + x[i]]);
+
 			}
 		}
-	}		
+	}
+	return moves;
 }
-function posMovesRuck(pieceNo){
-	//need to add teh castle move
-	//black : -1 
-	//white : 1
-	var player = (pieceNo < 16) ? 1:-1;
-	var posx = piece[pieceNo][0];
-	var posy = piece[pieceNo][1];
-
-	posArr = [[1,posy,posx],[1,posy,posx],[1,posy,posx],[1,posy,posx]];
-	for(var i = 1; i < 8; i++){
-		//if all searched terminated, stop iteration;
-		if(posArr[0][0]+posArr[1][0]+posArr[2][0]+posArr[3][0] == 0){
-			break;
-		} else {
-			//increment search
-			//forwards backwards left right
-			++posArr[0][1];
-			--posArr[1][1];
-			--posArr[2][2];
-			++posArr[3][2];
-			
-			searchLines(pieceNo);
-		}
-	}
-}
-function posMovesKnight(pieceNo){
-	//black : -1 
-	//white : 1
-	var player = (pieceNo < 16) ? 1:-1;
-	var posx = piece[pieceNo][0];
-	var posy = piece[pieceNo][1];
-	
-	//forwards left
-	var y = 2;
-	var x= -1;
-	if(posy+y < 8 && posx+x >=0){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-	//forwards right
-	y = 2;
-	x= +1;
-	if(posy+y < 8 && posx+x <8){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-	//backwards left
-	y = -2;
-	x= -1;
-	if(posy+y >= 0 && posx+x >=0){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-	//backwards right
-	y = -2;
-	x= +1;
-	if(posy+y >= 0 && posx+x <8){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-	//left forwards
-	y = 1;
-	x= -2;
-	if(posy+y < 8 && posx+x >=0){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-	//left back
-	y = -1;
-	x= -2;
-	if(posy+y >=0 && posx+x >=0){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-	//right forward
-	y = 1;
-	x= 2;
-	if(posy+y < 8 && posx+x <8){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-	//right back
-	y = -1;
-	x= 2;
-	if(posy+y >=0 && posx+x <8){
-		var p = board[posy + y][posx+x];
-		if(p == -1){
-			moves[pieceNo].push([posy + y,posx + x]);
-		} else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-			moves[pieceNo].push([posy + y,posx + x]);
-		}
-	}
-}
-function posMovesBishop(pieceNo){
-	//black : -1 
-	//white : 1
-	var player = (pieceNo < 16) ? 1:-1;
-	var posx = piece[pieceNo][0];
-	var posy = piece[pieceNo][1];
-	//forward-left forward-right back-left back-right
-	posArr = [[1,posy,posx],[1,posy,posx],[1,posy,posx],[1,posy,posx]];
-	for(var i = 1; i < 8; i++){
-		//if all searched terminated, stop iteration;
-		if(posArr[0][0]+posArr[1][0]+posArr[2][0]+posArr[3][0] == 0){
-			break;
-		} else {
-			//increment search
-			//forward-left forward-right back-left back-right
-			++posArr[0][1];
-			--posArr[0][2];
-			
-			++posArr[1][1];
-			++posArr[1][2];
-			
-			--posArr[2][1];
-			--posArr[2][2];
-			
-			--posArr[3][1];
-			++posArr[3][2];
-			searchLines(pieceNo);
-			
-		}
-	}
-}
-
 /*
-* This is a general function to test the validity of 4 tiles for a given piece
-* used the values assigned to global array posArr
-* @param pieceNo the piece to check moves for
+* Possible moves for Ruck
+* @param board the game board
+* @param posx the x coord
+* @param posy the y coord
+* @return an array of possible moves in the form [[y,x],[y,x]..] or [] if no moves possible
 */
-function searchLines(pieceNo){
-	var player = (pieceNo < 16) ? 1:-1;
-	for(var j = 0; j < 4;j++){
-	
-		//if still searching
-		if(posArr[j][0] == 1){
-			//within bounds
-			if(posArr[j][1] > -1 && posArr[j][1] < 8 && posArr[j][2] > -1 && posArr[j][2] < 8){
-				var p = board[posArr[j][1]][posArr[j][2]];
-				//tile is empty, add continue searching
-				if(p == -1){
-					moves[pieceNo].push([posArr[j][1],posArr[j][2]]);
-				//tile is players piece, stop searching
-				} else if((player == 1 && p < 16) || (player == -1 && p > 15)){
-					//set to stop searching
-					posArr[j][0] = 0;
-				//tile is opponents piece, add and stop searching
-				}else if((player == 1 && p > 15) || (player == -1 && p < 16)){
-					moves[pieceNo].push([posArr[j][1],posArr[j][2]]);
-					posArr[j][0] = 0;
-				}
-			} else {
-				//set to stop searching
-				posArr[j][0] = 0;
+function posMovesRuck(board, posx, posy){
+	//need to add teh castle move
+	var moves = [];
+
+	var posArr = [[posy,posx],[posy,posx],[posy,posx],[posy,posx]];
+	for(var i = 1; i < 8; i++){
+		//increment search
+		//forwards backwards left right
+		++posArr[0][0];
+		--posArr[1][0];
+		--posArr[2][1];
+		++posArr[3][1];
+
+		var thisMove = searchLines(board, posx, posy, posArr);
+		//if no further moves found
+		//stop searching
+		if(thisMove.length === 0){
+			break;
+		}else {
+			moves.concat(thisMove);
+		}
+	}
+	return moves;
+}
+/*
+* Possible moves for Knight
+* @param board the game board
+* @param posx the x coord
+* @param posy the y coord
+* @return an array of possible moves in the form [[y,x],[y,x]..] or [] if no moves possible
+*/
+function posMovesKnight(board, posx, posy){
+	var moves = [];
+	var posArr = [[2,1],[2,-1],[-2,-1],[-2,1],[1,2],[1,-2],[-1,2],[-1,-2]];
+	//forwards left
+	var y = 0;
+	var x = 0;
+	for(var i = 0; i < 8; i++){
+		y = posy + posArr[i][0];
+		x = posx + posArr[i][1];
+		if(boundaries(y,x)){
+			if(capture(board[posy][posx],board[y][x])){
+				moves.push([y,x]);
 			}
 		}
 	}
+	return moves;
 }
-
-function posMovesQueen(pieceNo){
-	//black : -1 
-	//white : 1
-	var player = (pieceNo < 16) ? 1:-1;
-	var posx = piece[pieceNo][0];
-	var posy = piece[pieceNo][1];
-	//up down left right
-	posMovesRuck(pieceNo);
+/*
+* Possible moves for Bishop
+* @param board the game board
+* @param posx the x coord
+* @param posy the y coord
+* @return an array of possible moves in the form [[y,x],[y,x]..] or [] if no moves possible
+*/
+function posMovesBishop(board, posx, posy){
+	var moves = [];
 	//forward-left forward-right back-left back-right
-	posMovesBishop(pieceNo);
-	
+	var posArr = [[posy,posx],[posy,posx],[posy,posx],[posy,posx]];
+	for(var i = 1; i < 8; i++){
+		//if all searched terminated, stop iteration;
+		//increment search
+		//forward-left forward-right back-left back-right
+		++posArr[0][0];
+		--posArr[0][1];
+
+		++posArr[1][0];
+		++posArr[1][1];
+
+		--posArr[2][0];
+		--posArr[2][1];
+
+		--posArr[3][0];
+		++posArr[3][1];
+		var thisMove = searchLines(board, posx, posy, posArr);
+		//if no further moves found
+		//stop searching
+		if(thisMove.length === 0){
+			break;
+		}else {
+			moves.concat(thisMove);
+		}
+	}
+	return moves;
 }
-function posMovesKing(pieceNo){
+/*
+* Possible moves for Queen
+* @param board the game board
+* @param posx the x coord
+* @param posy the y coord
+* @return an array of possible moves in the form [[y,x],[y,x]..] or [] if no moves possible
+*/
+function posMovesQueen(board, posx, posy){
+	var moves = [];
+	//up down left right
+	moves.concat(posMovesRuck(board, posx, posy));
+	//forward-left forward-right back-left back-right
+	moves.concat(posMovesBishop(board, posx, posy));
+	return moves;
+}
+/*
+* Possible moves for King
+* @param board the game board
+* @param posx the x coord
+* @param posy the y coord
+* @return an array of possible moves in the form [[y,x],[y,x]..] or [] if no moves possible
+*/
+function posMovesKing(board, posx, posy){
 	//need to add castling
-	//black : -1 
-	//white : 1
-	var player = (pieceNo < 16) ? 1:-1;
-	var posx = piece[pieceNo][0];
-	var posy = piece[pieceNo][1];
-	
-	//-1-1   0-1   1 1
-	
-	//-1 0         1 0
-	
-	//-1 1   0 1   1 1
-	
+	var moves = [];
+
 	for(var y = -1; y<2; y++){
 		for(var x = -1; x < 2; x++){
 			//ignore the current position
 			if(!(x==0 && y==0)){
 				//boundary check
-				if(posy+y != 8 && posy+y !=-1 && posx+x !=-1 && posx+x !=8){
-					var p = board[posy + y][posx+x];
-					if(p == -1 || (player == 1 && p > 15) || (player == -1 && p < 16)){
-						moves[pieceNo].push([posy + y,posx + x]);
+				if(boundaries(posy+y,posx+x)){
+					if(capture(board[posy][posx],board[posy + y][posx+x])){
+						moves.push([posy + y,posx + x]);
 					}
 				}
 			}
 		}
 	}
-	
+	return moves;
+}
+/*
+* This is a utility function to test the validity of 4 tiles for a given piece
+* @param posArr a 4x2 array containing the coords for tiles to test
+* @param board the game board
+* @param posx the x coord
+* @param posy the y coord
+* @return an array of possible moves in the form [[y,x],[y,x]..] or [] if no moves possible
+*/
+function searchLines(board, posx, posy, posArr){
+	var moves = [];
+	for(var j = 0; j < 4;j++){
+		if(boundaries(posArr[j][0],posArr[j][1])){
+			var p = board[posArr[j][0]][posArr[j][1]];
+			//tile is empty, add continue searching
+			//tile is opponents piece, add and stop searching
+			if(capture(board[posy][posx],p)){
+				moves.push([posArr[j][0],posArr[j][1]]);
+			}
+		}
+	}
+	return moves;
 }
 
+/*
+* utility function for testing boundaries
+* @param y y coord
+* @param x x coord
+* @return true or false
+*/
+function boundaries(y,x){
+	return (x < 8 && y < 8 && x > -1 && y > -1)
+}
+
+/*
+* utility function for testing if a move is a capture or valid empty tile
+* @param thisNumber current piece
+* @param thatNumber the tile to be captured
+* @return true or false
+*/
+function capture(thisNumber, thatNumber){
+	return (thatNumber === -1 || pieceColour(thisNumber) != pieceColour(thatNumber));
+}
+
+
+/*
+* function used to generate possible moves for a single piece
+* @param board the current game board array
+* @param x the x index
+* @param y the y index
+* @return the array of possible moves for this piece
+*/
+function possibleMove(board, x, y){
+	var moves = [];
+	//If empty tile an empty array is returned
+	if(board[y][x] == -1){
+		return moves;
+	} else {
+		switch(pieceType(board[y][x])) {
+			case PAWN:
+				moves = posMovesPawn(board,x,y);
+				break;
+			case RUCK:
+				moves = posMovesRuck(board,x,y);
+				break;
+			case KNIGHT:
+				moves = posMovesKnight(board,x,y);
+				break;
+			case BISHOP:
+				moves = posMovesBishop(board,x,y);
+				break;
+			case QUEEN:
+				moves = posMovesQueen(board,x,y);
+				break;
+			case KING:
+				moves = posMovesKing(board,x,y);
+				break;
+		}
+	}
+	//return the possible moves
+	return moves;
+}
+
+/*
+* Function to test if a move is valid
+* @param board the game board
+* @param fromY the piece Y coord
+* @param fromX the piece X coord
+* @param toY the coord after moving
+* @param toX the coord after moving
+* @return true or false if move is valid or not
+*/
+function validateMove(board, fromY, fromX, toY, toX){
+	var moves = possibleMove(board,fromX,fromY);
+	for(var i =0; i < moves.length;i++){
+		//if move is valid
+		if(moves[i][0] === toY && moves[i][1] === toX){
+			return true;
+		}
+	}
+	return false;
+}
+
+
+/*~~~~~ TESTING FUNCTIONS TO BE REMOVED BEFORE SUBMISSION ~~~~~*/
+
+
+/*FOR TESTING ONLY, REMOVE BEFORE SUBMISSION*/
 //just a test function that generates a string
 //it does not exectute possibe moves for all pieces
 //just a pawn and a king.
 function displayMoves(){
-	posMoves();
+	var moves = posMoves(BOARD);
 	var text = "";
-	for(var i = 0; i < 32; i++){
+	for(var i = 0; i < 12; i++){
 		text += "|" + i;
 		for(j = 0; j < moves[i].length; j++){
 			text += ": " + moves[i][j][0] + "," + moves[i][j][1];
 		}
 	}
 	document.getElementById("moves").innerHTML = "hello " + text;
+	//console.log(validateMove(BOARD,6,7,3,7)); //validate false
+	//console.log(validateMove(BOARD,6,7,4,7)); //validate true
 }
 
-/*
+/*FOR TESTING ONLY, REMOVE BEFORE SUBMISSION
 * Function to generate possible moves for all pieces
 * Possible moves are stored in the moves array
+* @param board the current game board array
+* @param posx the x index
+* @param posy the y index
+* @return the array of possible moves for all pieces
 */
-function posMoves(){
-	for(var i = 0; i<32;i++){
-		//clear the previous moves
-		moves[i] = [];
-		switch(piece[i][2]) {
-			case 0:
-				posMovesPawn(i);
-				break;
-			case 1:
-				posMovesRuck(i);
-				break;
-			case 2:
-				posMovesKnight(i);
-				break;
-			case 3:
-				posMovesBishop(i);
-				break;
-			case 4:
-				posMovesQueen(i);
-				break;
-			case 5:
-				posMovesKing(i);
-				break;
+function posMoves(board){
+	var moves = [[],[],[],[],[],[],[],[],[],[],[]];
+	for(var y = 0; y<8;y++){
+		for(var x = 0; x < 8; x++){
+			//clear the previous moves
+			switch(pieceType(board[y][x])) {
+				case PAWN:
+					moves[board[y][x]] = posMovesPawn(board,x,y);
+
+					break;
+				case RUCK:
+					moves[board[y][x]] = posMovesRuck(board,x,y);
+					break;
+				case KNIGHT:
+					moves[board[y][x]] = posMovesKnight(board,x,y);
+					break;
+				case BISHOP:
+					moves[board[y][x]] = posMovesBishop(board,x,y);
+					break;
+				case QUEEN:
+					moves[board[y][x]] = posMovesQueen(board,x,y);
+					break;
+				case KING:
+					moves[board[y][x]] = posMovesKing(board,x,y);
+					break;
+			}
 		}
 	}
+	return moves;
 }
+
 
 /*
 * Function to draw a chess board in specified position
@@ -352,16 +366,44 @@ function posMoves(){
 function paintBoard(){
 	//The element the board is getting placed into
 	var container = document.getElementsByClassName("maincontent");
-	var chessBoard = generateBoard();
-	container[0].appendChild(chessBoard);
+	var chessBoard = generateBoard(currentBoardState);
+	var highlightedBoard = highlightBoard(chessBoard, currentHighlight);
+	container[0].appendChild(highlightedBoard);
 }
-
+	
+	
+	var currentBoardState = BOARD;
+	var currentHighlight = [];
+	
+	function displayMoves(x,y, id){
+		console.log("triggered " + id);
+		//var tile = document.getElementById(id);
+		//tile.onmouseout(clearHighlight(x,y,x+":"+y));
+		currentHighlight = possibleMove(currentBoardState, x, y);
+		paintBoard();
+	}
+	function highlightBoard(chessBoard, highlight){
+		var cb = chessBoard;
+		for(var i = 0; i < highlight.length; i++){
+			cb.getElementById(highlight[i][1] + ":" + highlight[i][0]).style.borderColor = "green";
+		}
+		return cb;
+	}
+	function clearHighlight(x,y,id){
+		var tile = document.getElementById(id);
+		tile.onmouseover(displayMoves(x,y,x+":"+y));
+		currentHighlight = [];
+		paintBoard();
+	}
+			//imgfile = imgsrc + (pieceColour(piece)+pieceType(piece)) + ".svg";
+			//var pieceImg = <img src="images/pieces/0.svg" alt="hi">;
 /*
 * Function to generate html for the chessboard
 *@return the chessboard div element
 */
-function generateBoard(){
-	
+function generateBoard(board){
+	var imgsrc = "images/pieces/"
+	var imgfile = "";
 	var chessBoard = document.createElement("div");
 	
 	//class used for css
@@ -370,6 +412,7 @@ function generateBoard(){
 	//Colours tiles in standard pattern
 	for(var y = 0; y < 8; y++){
 		for(x = 0; x < 8; x++){
+			var piece = board[y][x];
 			var tile = document.createElement("div");
 			var text = document.createElement("p");
 			//class used for css
@@ -385,14 +428,14 @@ function generateBoard(){
 			//initial testing, write piece name on the board
 			if(board[y][x] != -1){
 				var textCol = "green";
-				if(board[y][x] > 15){
+				if(board[y][x] >= BLACK){
 					textCol = "black";
 				}
 				text.style.color = textCol;
 				
 				//pawn 0, ruck 1, knight 2,bishop 3,  queen 4, king 5
 				
-				switch (piece[board[y][x]][2]) {
+				switch (board[y][x]%6) {
 					case -1:
 						break;
 					case 0:
@@ -416,7 +459,15 @@ function generateBoard(){
 					
 				}
 			}
-			tile.appendChild(text);
+			if(piece != -1){
+				imgfile = imgsrc + (pieceColour(piece)+pieceType(piece)) + ".png";
+				var pieceImg = document.createElement("img");
+				pieceImg.src = imgfile;
+				pieceImg.id = x + "," + y;
+				tile.onclick = displayMoves(x,y);
+				//tile.style.backgroundImage = imgfile;
+				tile.appendChild(pieceImg);
+			}
 			chessBoard.appendChild(tile);
 		}
 	}
