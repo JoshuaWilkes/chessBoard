@@ -59,6 +59,12 @@ a{
 	float:left;
 }
 
+.nav_bar ul{
+	position:relative;
+	margin:auto;
+	width:60%;
+}
+
 
 .nav_bar_tabs{
 	height:100%;
@@ -84,3 +90,53 @@ a{
 .nav_bar a:hover{
 	background:linear-gradient(#0000b3,#000080);
 }
+
+.content_wrapper {
+	width:60%;
+	margin-left:20%;
+	height:100%;
+	background-color:red;
+	float:right;
+}
+
+article{
+	float:left;
+	width:98%;
+	margin:1%;
+	background-color:yellow;
+}
+.right_info_bar{
+	float:right;
+	width:20%;
+	min-width:300px;
+	height:100%;
+	background-color:pink;
+	
+}
+.right_info_bar h5{
+	margin-top:0px;
+	margin-bottom:2px;
+	width:100%;
+	background-color:purple;
+}
+.right_info_bar h2{
+	margin:2px;
+}
+
+.player_info {
+	
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
